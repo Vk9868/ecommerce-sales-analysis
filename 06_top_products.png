@@ -1,0 +1,38 @@
+product_id,product_name,category,price,cost,rating
+P001,Smartphone,Electronics,19110.0,15670.2,3.5
+P002,Laptop,Electronics,13650.0,11193.0,3.9
+P003,Tablet,Electronics,6240.0,5116.8,3.9
+P004,Earbuds,Electronics,4620.0,3788.4,3.2
+P005,Smartwatch,Electronics,6010.0,4928.2,4.9
+P006,Camera,Electronics,14630.0,11996.6,4.9
+P007,Speaker,Electronics,12200.0,10004.0,3.8
+P008,Power Bank,Electronics,13730.0,11258.6,4.0
+P009,T-Shirt,Fashion,810.0,364.5,4.4
+P010,Jeans,Fashion,1150.0,517.5,4.3
+P011,Dress,Fashion,2510.0,1129.5,3.5
+P012,Sneakers,Fashion,670.0,301.5,4.6
+P013,Handbag,Fashion,1910.0,859.5,3.3
+P014,Jacket,Fashion,3580.0,1611.0,3.3
+P015,Saree,Fashion,2650.0,1192.5,5.0
+P016,Kurta,Fashion,1230.0,553.5,3.5
+P017,Mixer,Home & Kitchen,1790.0,1074.0,3.7
+P018,Cookware Set,Home & Kitchen,1660.0,996.0,4.4
+P019,Bedsheet,Home & Kitchen,1400.0,840.0,4.1
+P020,Lamp,Home & Kitchen,7480.0,4488.0,4.7
+P021,Vacuum,Home & Kitchen,5000.0,3000.0,3.8
+P022,Water Bottle,Home & Kitchen,5060.0,3036.0,4.1
+P023,Air Fryer,Home & Kitchen,3770.0,2262.0,3.4
+P024,Sofa,Home & Kitchen,6760.0,4056.0,4.0
+P025,Fiction Novel,Books,360.0,252.0,3.9
+P026,Self-Help,Books,590.0,413.0,4.7
+P027,Textbook,Books,920.0,644.0,4.6
+P028,Comic,Books,170.0,119.0,3.9
+P029,Biography,Books,660.0,462.0,3.2
+P030,Cookbook,Books,430.0,301.0,4.6
+P031,Poetry,Books,300.0,210.0,4.2
+P032,Yoga Mat,Sports,860.0,559.0,3.2
+P033,Dumbbells,Sports,920.0,598.0,5.0
+P034,Cricket Bat,Sports,2240.0,1456.0,4.9
+P035,Football,Sports,1500.0,975.0,3.4
+P036,Cycling Gloves,Sports,1640.0,1066.0,4.0
+P037,Badminton Set,Sports,2340.0,1521.0,3.4

@@ -1,0 +1,151 @@
+"""
+E-Commerce Sales Data Generator
+Generates realistic synthetic data for analysis project
+"""
+
+import pandas as pd
+import numpy as np
+import sqlite3
+import random
+from datetime import datetime, timedelta
+
+np.random.seed(42)
+random.seed(42)
+
+# ── CONFIG ────────────────────────────────────────────────────────────────────
+N_CUSTOMERS  = 500
+N_PRODUCTS   = 80
+N_ORDERS     = 3000
+START_DATE   = datetime(2023, 1, 1)
+END_DATE     = datetime(2024, 12, 31)
+
+# ── CUSTOMERS ─────────────────────────────────────────────────────────────────
+cities   = ["Delhi","Mumbai","Bangalore","Chennai","Hyderabad","Kolkata","Pune","Ahmedabad"]
+segments = ["Regular","Premium","VIP"]
+seg_wts  = [0.65, 0.25, 0.10]
+
+customers = pd.DataFrame({
+    "customer_id":  [f"C{str(i).zfill(4)}" for i in range(1, N_CUSTOMERS+1)],
+    "city":         np.random.choice(cities, N_CUSTOMERS),
+    "segment":      np.random.choice(segments, N_CUSTOMERS, p=seg_wts),
+    "age":          np.random.randint(18, 65, N_CUSTOMERS),
+    "gender":       np.random.choice(["M","F"], N_CUSTOMERS),
+    "join_date":    [START_DATE + timedelta(days=int(d))
+                     for d in np.random.randint(0, 365, N_CUSTOMERS)],
+})
+
+# ── PRODUCTS ──────────────────────────────────────────────────────────────────
+categories = {
+    "Electronics":   {"items": ["Smartphone","Laptop","Tablet","Earbuds","Smartwatch",
+                                "Camera","Speaker","Power Bank"],   "margin": 0.18},
+    "Fashion":       {"items": ["T-Shirt","Jeans","Dress","Sneakers","Handbag",
+                                "Jacket","Saree","Kurta"],           "margin": 0.55},
+    "Home & Kitchen":{"items": ["Mixer","Cookware Set","Bedsheet","Lamp","Vacuum",
+                                "Water Bottle","Air Fryer","Sofa"], "margin": 0.40},
+    "Books":         {"items": ["Fiction Novel","Self-Help","Textbook","Comic",
+                                "Biography","Cookbook","Poetry"],    "margin": 0.30},
+    "Sports":        {"items": ["Yoga Mat","Dumbbells","Cricket Bat","Football",
+                                "Cycling Gloves","Badminton Set"],  "margin": 0.35},
+}
+
+products_list = []
+pid = 1
+for cat, info in categories.items():
+    for item in info["items"]:
+        base_price = {"Electronics":8000,"Fashion":1200,"Home & Kitchen":2500,
+                      "Books":400,"Sports":900}[cat]
+        price = round(base_price * np.random.uniform(0.4, 3.0), -1)
+        products_list.append({
+            "product_id":   f"P{str(pid).zfill(3)}",
+            "product_name": item,
+            "category":     cat,
+            "price":        price,
+            "cost":         round(price * (1 - info["margin"]), 2),
+            "rating":       round(np.random.uniform(3.2, 5.0), 1),
+        })
+        pid += 1
+
+products = pd.DataFrame(products_list)
+
+# ── ORDERS ────────────────────────────────────────────────────────────────────
+statuses   = ["Delivered","Returned","Cancelled","Processing"]
+status_wts = [0.78, 0.10, 0.07, 0.05]
+payment    = ["Credit Card","UPI","Debit Card","Net Banking","COD","Wallet"]
+pay_wts    = [0.28, 0.35, 0.15, 0.07, 0.10, 0.05]
+
+# Seasonal weight — Q4 spikes
+def seasonal_weight(d):
+    m = d.month
+    return 2.5 if m in [10,11,12] else 1.8 if m in [7,8,9] else 1.0
+
+date_range = [START_DATE + timedelta(days=i) for i in range((END_DATE-START_DATE).days)]
+date_weights = np.array([seasonal_weight(d) for d in date_range])
+date_weights /= date_weights.sum()
+order_dates = np.random.choice(date_range, N_ORDERS, p=date_weights)
+
+# VIP customers order more — skew customer selection
+cust_weights = customers["segment"].map({"Regular":1,"Premium":3,"VIP":8}).values
+cust_weights = cust_weights / cust_weights.sum()
+
+orders_list  = []
+items_list   = []
+order_id     = 1
+
+for odate in order_dates:
+    cust     = customers.sample(1, weights=cust_weights).iloc[0]
+    n_items  = np.random.choice([1,2,3,4], p=[0.50,0.30,0.15,0.05])
+    prods    = products.sample(n_items)
+    qty_list = np.random.randint(1, 4, n_items)
+    subtotal = sum(row["price"]*qty for (_, row), qty in zip(prods.iterrows(), qty_list))
+    discount = round(subtotal * np.random.uniform(0, 0.20), 2)
+    status   = np.random.choice(statuses, p=status_wts)
+    revenue  = round((subtotal - discount) * (0 if status=="Cancelled" else 1), 2)
+
+    orders_list.append({
+        "order_id":       f"O{str(order_id).zfill(5)}",
+        "customer_id":    cust["customer_id"],
+        "order_date":     odate.strftime("%Y-%m-%d"),
+        "status":         status,
+        "payment_method": np.random.choice(payment, p=pay_wts),
+        "subtotal":       round(subtotal, 2),
+        "discount":       discount,
+        "revenue":        revenue,
+        "city":           cust["city"],
+        "segment":        cust["segment"],
+    })
+
+    for (_, prod), qty in zip(prods.iterrows(), qty_list):
+        items_list.append({
+            "order_id":   f"O{str(order_id).zfill(5)}",
+            "product_id": prod["product_id"],
+            "quantity":   int(qty),
+            "unit_price": prod["price"],
+            "cost":       prod["cost"],
+            "total":      round(prod["price"] * qty, 2),
+            "profit":     round((prod["price"] - prod["cost"]) * qty, 2),
+        })
+    order_id += 1
+
+orders     = pd.DataFrame(orders_list)
+order_items = pd.DataFrame(items_list)
+
+# ── SAVE CSV ──────────────────────────────────────────────────────────────────
+customers.to_csv("/home/claude/ecommerce_analysis/data/customers.csv",   index=False)
+products.to_csv("/home/claude/ecommerce_analysis/data/products.csv",     index=False)
+orders.to_csv("/home/claude/ecommerce_analysis/data/orders.csv",         index=False)
+order_items.to_csv("/home/claude/ecommerce_analysis/data/order_items.csv", index=False)
+
+# ── SQLITE DB ─────────────────────────────────────────────────────────────────
+conn = sqlite3.connect("/home/claude/ecommerce_analysis/data/ecommerce.db")
+customers.to_sql("customers",   conn, if_exists="replace", index=False)
+products.to_sql("products",     conn, if_exists="replace", index=False)
+orders.to_sql("orders",         conn, if_exists="replace", index=False)
+order_items.to_sql("order_items", conn, if_exists="replace", index=False)
+conn.close()
+
+print(f"✅ Data generated:")
+print(f"   Customers  : {len(customers)}")
+print(f"   Products   : {len(products)}")
+print(f"   Orders     : {len(orders)}")
+print(f"   Order Items: {len(order_items)}")
+print(f"   Total Revenue: ₹{orders['revenue'].sum():,.0f}")
